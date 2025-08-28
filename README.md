@@ -28,20 +28,53 @@ Prerequisites:
 Build the runner image:
 
 ```bash
-./build.sh
+cd runner && ./build.sh
 ```
 
-Run the dispatcher (this will communicate with the local Docker daemon):
+Run the dispatcher (this will communicate with the local Docker daemon). The dispatcher module is available under the `lambda_poc` package; to run the small interactive demo use the `examples/client_example.py` script or run a short script that imports `lambda_poc.dispatcher`.
+
+Example (run the included client):
 
 ```bash
-python dispatcher.py
+python examples/client_example.py
 ```
 
-The `dispatcher.py` includes a small interactive example (in the `__main__` block) that demonstrates posting multiple sample pieces of code and retrieving results.
+If you want to run the runner directly for development, the runner script is under `runner/runner.py` and can be started with:
+
+```bash
+python runner/runner.py
+```
+
+Note that the project doesn't include a top-level `dispatcher.py` executable — the dispatcher is provided as the `lambda_poc` package (`lambda_poc/dispatcher.py`).
 
 ## Usage example (programmatic)
 
 See `examples/client_example.py` for a small client showing how to call `run_in_docker(code, payload)` from `dispatcher.py`.
+
+## Examples
+
+This repository includes a set of small example scripts under the `examples/` directory that demonstrate common usage patterns of the `Dispatcher` and `run_in_docker` helper. Each example is runnable from the repository root, for example:
+
+```bash
+python examples/echo_example.py
+python examples/fibonacci_example.py
+python examples/parallel_runs.py
+python examples/with_context_example.py
+python examples/error_example.py
+python examples/payload_example.py
+```
+
+- `echo_example.py`: simple echo of the input payload
+- `fibonacci_example.py`: compute Fibonacci(n) inside the runner
+- `parallel_runs.py`: run different code snippets to show container caching
+- `with_context_example.py`: use `Dispatcher` as a context manager
+- `error_example.py`: demonstrates how runner exceptions propagate
+- `payload_example.py`: show different payload types and returned summary
+
+Notes:
+
+- You need Docker running locally and a built runner image. Build the image with `./build.sh` before running examples.
+- Examples will contact the Docker daemon via the `Dispatcher` and start ephemeral containers; ensure your environment allows it.
 
 ## Development
 
