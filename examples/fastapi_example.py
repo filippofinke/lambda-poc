@@ -14,8 +14,8 @@ from lambda_poc.dispatcher import run_in_docker
 app = FastAPI()
 
 USER_CODE = """
-def handler(event):
-    name = event.get("name") or "world"
+def entrypoint(data):
+    name = data.get("name") or "world"
     return {"greeting": f"Hello {name}", "name": name}
 """
 
