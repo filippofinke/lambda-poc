@@ -37,4 +37,4 @@ if __name__ == "__main__":
     # Run with: python -m examples.fastapi_example
     # Requires uvicorn installed: pip install uvicorn
     import uvicorn
-    uvicorn.run("examples.fastapi_example:app", host="127.0.0.1", port=8000, log_level="info", reload=False)
+    uvicorn.run("examples.fastapi_example:app", host="127.0.0.1", port=8000, log_level="info", reload=True)
