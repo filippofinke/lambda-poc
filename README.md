@@ -1,59 +1,64 @@
-# lambda-poc
+<h1 align="center">Welcome to lambda-poc</h1>
 
-Lightweight proof-of-concept for running user-provided Python "runners" inside ephemeral Docker containers.
+> Lightweight proof-of-concept for running user-provided Python "runners" inside ephemeral Docker containers
 
-This repository contains:
+## Features
 
-- `runner.py` — a tiny FastAPI-based runner that accepts Python code via `/load` and executes it via `/run`.
-- `dispatcher.py` — a simple controller that builds/starts Docker containers for submitted code, calls the runner, and performs container lifecycle cleanup.
-- `Dockerfile` and `build.sh` — build the runner image used by the dispatcher.
+- [x] Execute user-provided Python code inside isolated Docker containers
+- [x] FastAPI-based runner that accepts code via /load and executes via /run
+- [x] Container caching by code hash to speed repeated runs
+- [x] Automatic idle cleanup of unused containers
+- [x] Small, easy-to-read codebase for experimentation
 
-This project is intended as a minimal PoC and should NOT be used as-is in production without adding proper sandboxing, resource limits, and security controls.
+## Install / Requirements
 
-**Contents**
-
-- Overview
-- Quick start
-- Usage examples
-- Development notes
-- Security and limitations
+- Docker (daemon available to the user running the dispatcher)
+- Python 3.11 recommended (for running examples locally)
+- Project Python deps (for running dispatcher/examples):
+  - pip install -r requirements.txt
+- Build runner Docker image (see Quick start)
 
 ## Quick start
 
-Prerequisites:
-
-- Docker installed and running
-- Python 3.11 (recommended) for running the `dispatcher.py` locally
-
-Build the runner image:
+1. Build the runner image:
 
 ```bash
-cd runner && ./build.sh
+cd runner
+./build.sh
 ```
 
-Run the dispatcher (this will communicate with the local Docker daemon). The dispatcher module is available under the `lambda_poc` package; to run the small interactive demo use the `examples/client_example.py` script or run a short script that imports `lambda_poc.dispatcher`.
-
-Example (run the included client):
+2. Run an example (from repository root):
 
 ```bash
 python examples/client_example.py
 ```
 
-If you want to run the runner directly for development, the runner script is under `runner/runner.py` and can be started with:
+Notes:
 
-```bash
-python runner/runner.py
+- The dispatcher will start a runner container for a code hash on first use; first run may take a few seconds.
+- Ensure Docker is running and the built image name matches lambda_poc.constants.RUNNER_IMAGE (default: runner-service).
+
+## Usage
+
+- runner/runner.py — tiny FastAPI app that accepts Python source via POST /load and runs entrypoint(data) via POST /run.
+- lambda_poc/dispatcher.py — starts containers, loads code, invokes the runner, and performs TTL-based cleanup.
+- Examples under examples/ demonstrate common workflows (echo, fibonacci, error handling, payloads, FastAPI integration).
+
+Example: programmatic run using the convenience helper
+
+```python
+from lambda_poc.dispatcher import run_in_docker
+
+code = """
+def entrypoint(data):
+    return {"echo": data}
+"""
+print(run_in_docker(code, {"msg": "hello"}))
 ```
-
-Note that the project doesn't include a top-level `dispatcher.py` executable — the dispatcher is provided as the `lambda_poc` package (`lambda_poc/dispatcher.py`).
-
-## Usage example (programmatic)
-
-See `examples/client_example.py` for a small client showing how to call `run_in_docker(code, payload)` from `dispatcher.py`.
 
 ## Examples
 
-This repository includes a set of small example scripts under the `examples/` directory that demonstrate common usage patterns of the `Dispatcher` and `run_in_docker` helper. Each example is runnable from the repository root, for example:
+Run any example from the repo root:
 
 ```bash
 python examples/echo_example.py
@@ -62,34 +67,44 @@ python examples/parallel_runs.py
 python examples/with_context_example.py
 python examples/error_example.py
 python examples/payload_example.py
+# For the FastAPI demo:
+uvicorn examples.fastapi_example:app --reload --port 8000
 ```
-
-- `echo_example.py`: simple echo of the input payload
-- `fibonacci_example.py`: compute Fibonacci(n) inside the runner
-- `parallel_runs.py`: run different code snippets to show container caching
-- `with_context_example.py`: use `Dispatcher` as a context manager
-- `error_example.py`: demonstrates how runner exceptions propagate
-- `payload_example.py`: show different payload types and returned summary
-
-Notes:
-
-- You need Docker running locally and a built runner image. Build the image with `./build.sh` before running examples.
-- Examples will contact the Docker daemon via the `Dispatcher` and start ephemeral containers; ensure your environment allows it.
 
 ## Development
 
-- Linting: follow standard Python best practices. Use `ruff`/`black` if desired.
-- Tests: none included in this PoC.
+- Install dependencies:
 
-## Security and limitations
+```bash
+pip install -r requirements.txt
+```
 
-This PoC intentionally keeps things small; it executes arbitrary Python code inside containers. Without additional sandboxing and resource controls this is unsafe. If you plan to extend this project, consider:
+- Build runner image for testing:
 
-- Running containers with user namespaces / non-root users
-- Limiting CPU / memory and execution time
-- Disallowing network access from user code or restricting it
-- Validating and restricting uploaded code
+```bash
+cd runner && ./build.sh
+```
+
+- Run and iterate on examples or import lambda_poc.Dispatcher in your code.
+
+## Security & Limitations
+
+This is a proof-of-concept. Do NOT run untrusted code with this setup in production — it executes arbitrary Python in containers without strict sandboxing. Suggested hardening before production use:
+
+- Add resource limits (CPU/memory) and timeouts
+- Run containers with restricted users and seccomp/apparmor policies
+- Restrict network access and filesystem mounts
+- Validate or sandbox uploaded code
 
 ## License
 
-MIT — see `LICENSE`.
+MIT — see LICENSE
+
+## Author
+
+👤 Filippo Finke
+
+- Website: https://filippofinke.ch
+- Twitter: https://twitter.com/filippofinke
+- Github: https://github.com/filippofinke
+- LinkedIn: https://linkedin.com/in/filippofinke
